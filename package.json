@@ -15,6 +15,26 @@
     ],
     "main": "./extension",
     "contributes": {
+        "configuration": {
+            "title": "VS Template",
+            "properties": {
+                "vs-template.pattern": {
+                    "type": "string",
+                    "default": "{{Name}}",
+                    "description": "Pattern scheme that will be replaced with the name of the template"
+                },
+                "vs-template.folder": {
+                    "type": "string",
+                    "default": ".vs-templates",
+                    "description": "Folder where the vs templates will be stored"
+                },
+                "vs-template.Auto Create Folder": {
+                    "type":"boolean",
+                    "default": false,
+                    "description": "Folder creation question for creating a folder when creating a new template"
+                }
+            }
+        },
         "commands": [
             {
                 "command": "extension.generateVsTemplate",
