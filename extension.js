@@ -2,8 +2,6 @@ const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
 
-const TEMPLATE_FOLDER = '.vs-templates';
-const TEMPLATE_NAME_PATTERN = '{{Name}}';
 const PLACEHOLDERS = {
     SELECT_TEMPLATE: 'Select your template...',
     TEMPLATE_NAME: 'Enter your template name...',
@@ -12,9 +10,11 @@ const PLACEHOLDERS = {
 
 class VSTemplateExtension {
     onStart(target) {
+        const vsconfig = vscode.workspace.getConfiguration('vs-template');
+        const TEMPLATE_FOLDER = vsconfig.get('folder') || '.vs-templates';
         const workspacePath = vscode.workspace.workspaceFolders[0].uri.path;
         const templatesFolder = path.join(workspacePath, TEMPLATE_FOLDER);
-        const targetPath = target.path;
+        const targetPath = !!target ? target.path : workspacePath;
         const vswindow = vscode.window;
 
         if (fs.existsSync(templatesFolder)) {
@@ -26,43 +26,56 @@ class VSTemplateExtension {
                     vswindow
                         .showInputBox({placeHolder: PLACEHOLDERS.TEMPLATE_NAME})
                         .then(templateName => {
+                            const autoCreateFolder = vsconfig.get('Auto Create Folder');
+
+                            if (autoCreateFolder) {
+                                this.createTemplate('yes', targetPath, templateName, templatesFolder, userInput);
+                                vswindow.showInformationMessage(`Created a new "${userInput}" template`);
+                                return;
+                            }
+
                             vswindow.showQuickPick([
                                 'yes', 'no'
                             ], {placeHolder: PLACEHOLDERS.CREATE_FOLDER}).then(withFolderAnswer => {
-                                const withFolder = withFolderAnswer === 'yes';
-
-                                const createdTemplateFolder = path.join(targetPath, templateName);
-
-                                if (withFolder)
-                                    fs.mkdirSync(createdTemplateFolder);
-
-                                const selectedTemplateFolder = path.join(templatesFolder, userInput);
-                                const templateFiles = fs.readdirSync(selectedTemplateFolder);
-
-                                templateFiles.map(file => {
-                                    const fileContent = fs.readFileSync(path.join(selectedTemplateFolder, file));
-                                    const regex = new RegExp(TEMPLATE_NAME_PATTERN, "g");
-                                    const content = fileContent
-                                        .toString()
-                                        .replace(regex, templateName);
-
-                                    fs.writeFileSync(path.join(withFolder
-                                        ? createdTemplateFolder
-                                        : targetPath, file.replace(TEMPLATE_NAME_PATTERN, templateName)), content);
-                                });
-
+                                this.createTemplate(withFolderAnswer, targetPath, templateName, templatesFolder, userInput);
                                 vswindow.showInformationMessage(`Created a new "${userInput}" template`);
                             });
-
                         })
                 });
         }
     }
 
+    createTemplate(withFolderAnswer, targetPath, templateName, templatesFolder, userInput) {
+        const vsconfig = vscode.workspace.getConfiguration('vs-template');
+        const TEMPLATE_NAME_PATTERN = vsconfig.get('pattern') || '{{Name}}';
+
+        const withFolder = withFolderAnswer === 'yes';
+
+        const createdTemplateFolder = path.join(targetPath, templateName);
+
+        if (withFolder)
+            fs.mkdirSync(createdTemplateFolder);
+
+        const selectedTemplateFolder = path.join(templatesFolder, userInput);
+        const templateFiles = fs.readdirSync(selectedTemplateFolder);
+
+        templateFiles.map(file => {
+            const fileContent = fs.readFileSync(path.join(selectedTemplateFolder, file));
+            const regex = new RegExp(TEMPLATE_NAME_PATTERN, "g");
+            const content = fileContent
+                .toString()
+                .replace(regex, templateName);
+
+            fs.writeFileSync(path.join(withFolder
+                ? createdTemplateFolder
+                : targetPath, file.replace(TEMPLATE_NAME_PATTERN, templateName)), content);
+        });
+    }
+
     activate(context) {
         let disposable = vscode
             .commands
-            .registerCommand('extension.generateVsTemplate', this.onStart);
+            .registerCommand('extension.generateVsTemplate', this.onStart.bind(this));
         context
             .subscriptions
             .push(disposable);

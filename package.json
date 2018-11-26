@@ -31,7 +31,7 @@
                 "vs-template.Auto Create Folder": {
                     "type":"boolean",
                     "default": false,
-                    "description": "Folder creation question for creating a folder when creating a new template"
+                    "description": "Auto create a folder for the template creation"
                 }
             }
         },
