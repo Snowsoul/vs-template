@@ -21,6 +21,9 @@ class VSTemplateExtension {
             : workspacePath;
         const vswindow = vscode.window;
 
+        if (!fs.existsSync(templatesFolder))
+            return vswindow.showErrorMessage('The templates folder does not exist. Either create a new .vs-templates folder or change the folder name in the user config.');
+
         if (fs.existsSync(templatesFolder)) {
             const templates = fs.readdirSync(templatesFolder);
 
