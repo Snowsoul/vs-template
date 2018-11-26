@@ -10,11 +10,15 @@ const PLACEHOLDERS = {
 
 class VSTemplateExtension {
     onStart(target) {
-        const vsconfig = vscode.workspace.getConfiguration('vs-template');
+        const vsconfig = vscode
+            .workspace
+            .getConfiguration('vs-template');
         const TEMPLATE_FOLDER = vsconfig.get('folder') || '.vs-templates';
         const workspacePath = vscode.workspace.workspaceFolders[0].uri.path;
         const templatesFolder = path.join(workspacePath, TEMPLATE_FOLDER);
-        const targetPath = !!target ? target.path : workspacePath;
+        const targetPath = !!target
+            ? target.path
+            : workspacePath;
         const vswindow = vscode.window;
 
         if (fs.existsSync(templatesFolder)) {
@@ -46,15 +50,20 @@ class VSTemplateExtension {
     }
 
     createTemplate(withFolderAnswer, targetPath, templateName, templatesFolder, userInput) {
-        const vsconfig = vscode.workspace.getConfiguration('vs-template');
+        const vsconfig = vscode
+            .workspace
+            .getConfiguration('vs-template');
         const TEMPLATE_NAME_PATTERN = vsconfig.get('pattern') || '{{Name}}';
 
         const withFolder = withFolderAnswer === 'yes';
 
         const createdTemplateFolder = path.join(targetPath, templateName);
 
-        if (withFolder)
+        if (withFolder) {
+            if (fs.existsSync(createdTemplateFolder))
+                return vscode.window.showErrorMessage(`Folder "${templateName}" already exists !`);
             fs.mkdirSync(createdTemplateFolder);
+        }
 
         const selectedTemplateFolder = path.join(templatesFolder, userInput);
         const templateFiles = fs.readdirSync(selectedTemplateFolder);
@@ -66,9 +75,14 @@ class VSTemplateExtension {
                 .toString()
                 .replace(regex, templateName);
 
-            fs.writeFileSync(path.join(withFolder
+            const filePath = path.join(withFolder
                 ? createdTemplateFolder
-                : targetPath, file.replace(TEMPLATE_NAME_PATTERN, templateName)), content);
+                : targetPath, file.replace(TEMPLATE_NAME_PATTERN, templateName));
+
+            if (fs.existsSync(filePath))
+                return vscode.window.showErrorMessage(`File "${file.replace(TEMPLATE_NAME_PATTERN, templateName)}" already exists !`);
+
+            fs.writeFileSync(filePath, content);
         });
     }
 
