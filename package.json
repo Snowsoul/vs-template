@@ -9,7 +9,7 @@
     "description": "Generates new templates based on a generic template",
     "version": "0.1.0",
     "engines": {
-        "vscode": "^1.29.0"
+        "vscode": "^1.27.0"
     },
     "categories": [
         "Other"
