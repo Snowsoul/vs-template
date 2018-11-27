@@ -1,6 +1,7 @@
 # Change Log
-All notable changes to the "vs-generator" extension will be documented in this file.
+
+Updates will show in here
 
 
-## [Unreleased]
+## v0.1
 - Initial release
