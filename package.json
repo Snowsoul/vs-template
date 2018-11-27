@@ -1,6 +1,6 @@
 {
     "name": "vs-generator",
-    "publisher": "Adrian Bindiu",
+    "publisher": "AdrianDesign",
     "displayName": "vs-generator",
     "description": "Generates new templates based on a generic template",
     "version": "0.0.1",
