@@ -1,5 +1,9 @@
 {
     "name": "vs-generator",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Snowsoul/vs-template.git"
+    },
     "publisher": "AdrianDesign",
     "displayName": "vs-generator",
     "description": "Generates new templates based on a generic template",
