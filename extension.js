@@ -1,11 +1,13 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const path = require('path');
+const dashify = require('dashify');
 
 const PLACEHOLDERS = {
   SELECT_TEMPLATE: 'Select your template...',
   TEMPLATE_NAME: 'Enter your template name...',
   CREATE_FOLDER: 'Create folder for template?',
+  DASHES_SEPARATOR: 'Separate Name Using Dashes (-) ?'
 };
 
 class VSTemplateExtension {
@@ -36,36 +38,45 @@ class VSTemplateExtension {
             .then(templateName => {
               const autoCreateFolder = vsconfig.get('Auto Create Folder');
 
-              if (autoCreateFolder) {
-                this.createTemplate(
-                  'yes',
-                  targetPath,
-                  templateName,
-                  templatesFolder,
-                  userInput
-                );
-                vswindow.showInformationMessage(
-                  `Created a new "${userInput}" template`
-                );
-                return;
-              }
-
               vswindow
-                .showQuickPick(['yes', 'no'], {
-                  placeHolder: PLACEHOLDERS.CREATE_FOLDER,
-                })
-                .then(withFolderAnswer => {
+              .showQuickPick(['yes', 'no'], {
+                placeHolder: PLACEHOLDERS.DASHES_SEPARATOR,
+              }).then(response => {
+                const withDashes = response === 'yes';
+                if (autoCreateFolder) {
                   this.createTemplate(
-                    withFolderAnswer,
+                    'yes',
                     targetPath,
                     templateName,
                     templatesFolder,
-                    userInput
+                    userInput,
+                    withDashes
                   );
                   vswindow.showInformationMessage(
                     `Created a new "${userInput}" template`
                   );
-                });
+
+                  return;
+                }
+
+                vswindow
+                  .showQuickPick(['yes', 'no'], {
+                    placeHolder: PLACEHOLDERS.CREATE_FOLDER,
+                  })
+                  .then(withFolderAnswer => {
+                    this.createTemplate(
+                      withFolderAnswer,
+                      targetPath,
+                      templateName,
+                      templatesFolder,
+                      userInput,
+                      withDashes
+                    );
+                    vswindow.showInformationMessage(
+                      `Created a new "${userInput}" template`
+                    );
+                  });
+              });
             });
         });
     }
@@ -76,7 +87,8 @@ class VSTemplateExtension {
     targetPath,
     templateName,
     templatesFolder,
-    userInput
+    userInput,
+    withDashes
   ) {
     const vsconfig = vscode.workspace.getConfiguration('vs-template');
     const TEMPLATE_NAME_PATTERN = vsconfig.get('pattern') || '{{Name}}';
@@ -102,10 +114,17 @@ class VSTemplateExtension {
       );
       const regex = new RegExp(TEMPLATE_NAME_PATTERN, 'g');
       const content = fileContent.toString().replace(regex, templateName);
+      let newFile = templateName;
+
+      // If it has more than 2 capital letters
+      // And the first one is capital it means it uses PascalCase
+      if (withDashes && templateName[0].match(/[A-Z]/g) && templateName.match(/[A-Z]/g).length > 1) {
+        newFile = dashify(templateName);
+      }
 
       const filePath = path.join(
         withFolder ? createdTemplateFolder : targetPath,
-        file.replace(TEMPLATE_NAME_PATTERN, templateName)
+        file.replace(TEMPLATE_NAME_PATTERN, newFile)
       );
 
       if (fs.existsSync(filePath))
